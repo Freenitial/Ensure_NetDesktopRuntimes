@@ -13,8 +13,8 @@
     :HELP
     echo.
     echo  Ensure Windows Desktop Runtime installed
-    echo  Can auto-detect setup files -starting with 'windowsdesktop-runtime' in same script directory,
-    echo  or give -setup paths
+    echo  Can auto-detect setup files starting with 'windowsdesktop-runtime' in same script directory,
+    echo  or give argument -setup paths, comma-separated
     echo.
     echo  Usage:
     echo    %~nx0 [options]
