@@ -12,6 +12,8 @@
 
     :HELP
     echo.
+    echo  v1.0 - made by Léo Gillet / Freenitial on GitHub
+    echo.
     echo  Ensure Windows Desktop Runtime installed
     echo  Can auto-detect setup files starting with 'windowsdesktop-runtime' in same script directory,
     echo  or give argument -setup paths, comma-separated
@@ -29,7 +31,7 @@
     echo    0  Installation completed successfully
     echo    2  Already installed
     echo    3  Installation failed
-    echo    4  Setup file not found / parsing error
+    echo    4  Setup file not found
     echo    5  Invalid arguments
     echo    6  Architecture incompatibility
     echo    7  Invalid setup configuration
