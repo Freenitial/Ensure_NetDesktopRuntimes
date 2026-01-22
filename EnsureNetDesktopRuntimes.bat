@@ -31,11 +31,12 @@
     echo    0  Installation completed successfully
     echo    2  Already installed
     echo    3  Installation failed
+	echo    33 Partial success
     echo    4  Setup file not found
     echo    5  Invalid arguments
     echo    6  Architecture incompatibility
     echo    7  Invalid setup configuration
-    echo    8  Partial success
+    echo    8  Cannot write log
     echo    9  Parsing error
     echo.
     exit /b 0
@@ -252,27 +253,34 @@ function Initialize-LogFile {
     $logFilePath = ""
     $logDir = ""
     if ([string]::IsNullOrEmpty($Log)) {
-        $tempDir = [Environment]::GetEnvironmentVariable("TEMP")
-        if ([string]::IsNullOrEmpty($tempDir)) { $tempDir = [Environment]::GetEnvironmentVariable("TMP") }
-        if ([string]::IsNullOrEmpty($tempDir)) { $tempDir = "C:\Windows\Temp" }
-        $logFilePath = $tempDir + "\" + $logFileName
-        $logDir      = $tempDir
+        $logDir = [Environment]::GetEnvironmentVariable("TEMP")
+        if ([string]::IsNullOrEmpty($logDir)) { $logDir = [Environment]::GetEnvironmentVariable("TMP") }
+        if ([string]::IsNullOrEmpty($logDir)) { $logDir = "C:\Windows\Temp" }
+        $logFilePath = $logDir + "\" + $logFileName
     }
     else {
         $pathToCheck = $Log.TrimEnd('\')
-        if     ([System.IO.Directory]::Exists($pathToCheck)) { $logFilePath = $pathToCheck + "\" + $logFileName ; $logDir = $pathToCheck }
-        elseif ($Log.EndsWith("\"))                          { $logFilePath = $pathToCheck + "\" + $logFileName ; $logDir = $pathToCheck }
+        if ([System.IO.Directory]::Exists($pathToCheck) -or $Log.EndsWith("\")) {
+            $logDir = $pathToCheck
+            $logFilePath = $logDir + "\" + $logFileName
+        }
         else {
             $logFilePath = $Log
             $lastSlash = $Log.LastIndexOf("\")
-            if ($lastSlash -gt 0) { $logDir = $Log.Substring(0, $lastSlash) }
-            else                  { $logDir = $Script:ScriptDir ; $logFilePath = $logDir + "\" + $Log }
+            if ($lastSlash -ge 1) { $logDir = $Log.Substring(0, $lastSlash) }
+            else                  { $logDir = $Script:ScriptDir  ;  $logFilePath = $logDir + "\" + $Log }
         }
     }
     $Script:LogFile = $logFilePath
     if (-not [System.IO.Directory]::Exists($logDir)) {
-        [Console]::WriteLine("ERROR : Log directory does not exist : $logDir")
-        exit 5
+        try {
+            [System.IO.Directory]::CreateDirectory($logDir) | Out-Null
+            [Console]::WriteLine("INFO : Log directory created : $logDir")
+        }
+        catch {
+            [Console]::WriteLine("ERROR : Cannot create log directory : $logDir")
+            exit 8
+        }
     }
     $testFile = $logDir + "\__write_test_" + [Guid]::NewGuid().ToString("N") + ".tmp"
     try {
@@ -281,11 +289,9 @@ function Initialize-LogFile {
     }
     catch {
         [Console]::WriteLine("ERROR : Cannot write to log directory : $logDir")
-        exit 5
+        exit 8
     }
-    if ([System.IO.File]::Exists($Script:LogFile)) {
-        [System.IO.File]::AppendAllText($Script:LogFile, "`r`n================`r`n`r`n")
-    }
+    if ([System.IO.File]::Exists($Script:LogFile)) { [System.IO.File]::AppendAllText($Script:LogFile, "`r`n===============`r`n") }
 }
 
 function Find-SetupFiles {
@@ -513,7 +519,7 @@ if ($countFailed -gt 0) {
     if ($countSuccess -gt 0) {
         Write-Log "Script completed with PARTIAL SUCCESS."
         Write-Log "Some installations failed, review log for details."
-        exit 8
+        exit 33
     }
     else {
         Write-Log "Script completed with ERRORS."
