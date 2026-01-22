@@ -1,6 +1,6 @@
-# **Ensure Windows Desktop Runtime**
+# **Ensure .NET Windows Desktop Runtime installed**
 
-**Detects, validates, and installs required Microsoft .NET Windows Desktop Runtime versions (x86 / x64).**
+**Detects, validates, and installs silently required Microsoft .NET Windows Desktop Runtime versions (x86 / x64).**
 
 ---
 
