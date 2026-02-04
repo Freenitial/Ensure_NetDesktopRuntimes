@@ -98,12 +98,14 @@ EnsureDotNetRuntime.bat -Test
 |    0 | Installation completed successfully     |
 |    2 | All required runtimes already installed |
 |    3 | Installation failed                     |
+|    33 | Partial success                        |
 |    4 | Setup file not found                    |
 |    5 | Invalid arguments or log path error     |
 |    6 | Architecture incompatibility            |
 |    7 | Invalid installer configuration         |
 |    8 | Partial success                         |
 |    9 | Parsing or version detection error      |
+|    3010 | Reboot required                      |
 
 ---
 
