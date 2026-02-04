@@ -28,16 +28,17 @@
     echo    -test          [switch] Just log without install
     echo.
     echo  Exit codes:
-    echo    0  Installation completed successfully
-    echo    2  Already installed
-    echo    3  Installation failed
-	echo    33 Partial success
-    echo    4  Setup file not found
-    echo    5  Invalid arguments
-    echo    6  Architecture incompatibility
-    echo    7  Invalid setup configuration
-    echo    8  Cannot write log
-    echo    9  Parsing error
+    echo    0     Installation completed successfully
+    echo    2     Already installed
+    echo    3     Installation failed
+    echo    33    Partial success
+    echo    4     Setup file not found
+    echo    5     Invalid arguments
+    echo    6     Architecture incompatibility
+    echo    7     Invalid setup configuration
+    echo    8     Cannot write log
+    echo    9     Parsing error
+    echo    3010  Installation completed, reboot required
     echo.
     exit /b 0
 #>
@@ -239,7 +240,7 @@ function Install-Runtime {
         Write-Log "Installation exit code : $exitCode"
         switch ($exitCode) {
             0       { Write-Log "$Arch v$Version runtime installed successfully."                      ; return "success" }
-            3010    { Write-Log "$Arch v$Version runtime installed successfully. Reboot required."     ; return "success" }
+            3010    { Write-Log "$Arch v$Version runtime installed successfully. Reboot required."     ; return "reboot" }
             1638    { Write-Log "$Arch v$Version runtime : A newer version is already installed."      ; return "already" }
             1602    { Write-Log "$Arch v$Version installation was cancelled."                          ; return "cancelled" }
             default { Write-Log "ERROR : $Arch v$Version installation failed with exit code $exitCode" ; return "failed" }
@@ -496,27 +497,30 @@ Write-Log " Installation Summary"
 Write-Log "============================================"
 
 $countSuccess = 0
+$countReboot  = 0
 $countFailed  = 0
 $countSkipped = 0
 
 foreach ($inst in $Script:Installers) {
     $label = "$($inst.Arch) v$($inst.Version)"
     switch ($inst.Result) {
-        "success"   { Write-Log "$label : Installed successfully"             ; $countSuccess++ }
-        "already"   { Write-Log "$label : Already installed, no action taken" ; $countSkipped++ }
-        "skip"      { Write-Log "$label : Skipped, already met requirements"  ; $countSkipped++ }
-        "cancelled" { Write-Log "$label : CANCELLED"                          ; $countFailed++ }
-        "pending"   { Write-Log "$label : PENDING (unexpected)"               ; $countFailed++ }
-        default     { Write-Log "$label : FAILED"                             ; $countFailed++ }
+        "success"   { Write-Log "$label : Installed successfully"                    ; $countSuccess++ }
+        "reboot"    { Write-Log "$label : Installed successfully (reboot required)"  ; $countReboot++ }
+        "already"   { Write-Log "$label : Already installed, no action taken"        ; $countSkipped++ }
+        "skip"      { Write-Log "$label : Skipped, already met requirements"         ; $countSkipped++ }
+        "cancelled" { Write-Log "$label : CANCELLED"                                 ; $countFailed++ }
+        "pending"   { Write-Log "$label : PENDING (unexpected)"                      ; $countFailed++ }
+        default     { Write-Log "$label : FAILED"                                    ; $countFailed++ }
     }
 }
-
+$totalInstalled = $countSuccess + $countReboot
 Write-Log ""
-Write-Log "Results : $countSuccess installed, $countFailed failed, $countSkipped skipped"
+Write-Log "Results : $totalInstalled installed, $countFailed failed, $countSkipped skipped"
+if ($countReboot -gt 0) { Write-Log "Reboot is required to complete installation." }
 Write-Log ""
 
 if ($countFailed -gt 0) {
-    if ($countSuccess -gt 0) {
+    if ($totalInstalled -gt 0) {
         Write-Log "Script completed with PARTIAL SUCCESS."
         Write-Log "Some installations failed, review log for details."
         exit 33
@@ -526,7 +530,11 @@ if ($countFailed -gt 0) {
         exit 3
     }
 }
-elseif ($countSuccess -gt 0) {
+elseif ($totalInstalled -gt 0) {
+    if ($countReboot -gt 0) {
+        Write-Log "Script completed successfully. Reboot required."
+        exit 3010
+    }
     Write-Log "Script completed successfully."
     exit 0
 }
