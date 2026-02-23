@@ -55,7 +55,7 @@ If detection fails, the script exits with an error.
 
 ## Usage Examples 📘
 
-### Automatic discovery (same directory)
+### Automatic discovery (windowsdesktop-runtime-*.exe in same directory)
 
 ```bat
 EnsureDotNetRuntime.bat
